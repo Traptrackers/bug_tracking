@@ -1,0 +1,67 @@
+.display {
+  display: block;
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: #f0f0f0; /* Greyish white background color */
+  color: #333; /* Adjust text color as needed */
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle shadow effect */
+  transition: transform 0.3s ease-in-out;
+  width :1370px;
+  height: 80px
+}
+
+.display:hover {
+  transform: scale(1.1);
+}
+.maininside {
+  display: flex;
+}
+.inside{
+  padding-right:80px;
+  padding-left: 80px;
+}
+.box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+button{
+  border-radius: 5px;
+  padding:2px
+}
+
+/* Add this to your existing CSS */
+/* Add this to your existing CSS */
+
+.display button.block {
+  background-color: #545cb1;
+  color: white;
+  outline: none;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 3px;
+  border: 1px solid #3949AB;
+  transition: background-color 0.5s; /* Add transition for smooth color change */
+}
+h1{
+  color: #f0f0f0;
+}
+.display button.block:hover {
+  background-color: red; /* Change to the desired hover color */
+}
+
+.display button.complete {
+  background-color: #545cb1;
+  color: white;
+  outline: none;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: 3px;
+  border: 1px solid #3949AB;
+  transition: background-color 0.5s; /* Add transition for smooth color change */
+}
+
+.display button.complete:hover {
+  background-color: green; /* Change to the desired hover color */
+}
