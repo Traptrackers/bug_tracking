@@ -1,5 +1,5 @@
 import {Route,Routes} from 'react-router-dom';
-import Login from './components/auth/Logi';
+import Login from './components/auth/Login';
 
 
 function App() {
