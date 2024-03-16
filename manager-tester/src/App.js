@@ -11,11 +11,13 @@ import Manager_completed from './components/Manager/Manager_pages/Manager_comple
 import Tester_home from './Tester/Tester_pages/Tester_home'
 import Tester_details from './Tester/Tester_pages/Tester_details';
 import Tester_bugCreate from './Tester/Tester_pages/Tester_bugCreate';
+import Tester_bugManagement from './Tester/Tester_pages/Tester_bugManagement';
 
 
 function App() {
   return (
     <Routes>
+      <Route path='/' element={<Tester_login/>}/>
       <Route path='/Manager_login' element={<Manager_login/>}/>
       <Route path='/Tester_login' element={<Tester_login/>}/>
       <Route path='/Manager_work' element={<Manager_work/>}/>
@@ -27,6 +29,7 @@ function App() {
       <Route path='/Tester_home' element={<Tester_home/>}/>
       <Route path='/Tester_details' element={<Tester_details/>}/>
       <Route path="/Tester_bugCreate" element={<Tester_bugCreate/>}/>
+      <Route path='/Tester_bugManagement' element={<Tester_bugManagement/>}/>
 
 
     </Routes>

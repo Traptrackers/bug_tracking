@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 function Tester_login() {
   return (
@@ -11,7 +12,7 @@ function Tester_login() {
               <div className="font font2">Password</div>
               <input type="password" name="password" />
               <div id="pass_error">Please fill up your Password</div>
-              <button type="submit">Login</button>  
+              <Link to='/Tester_home'><button type="submit">Login</button>  </Link>
           </form>
       </div>
 
