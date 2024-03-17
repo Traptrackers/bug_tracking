@@ -30,7 +30,7 @@ React
 3. npm start
 
 Node
-1. Open - bug_tracking > manager-tester > backend
+1. Open - bug_tracking > > backend
 2. cmd - npm i	(if necessary , install the remaining packages seperately)
 3. npm start
 
