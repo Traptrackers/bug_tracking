@@ -1,19 +1,20 @@
-const {Pool} = require('pg');
+const { Pool } = require('pg');
 
 const pool = new Pool({
-    user : "postgres",
-    password : "2003",
-    host : "localhost",
-    port : 5432,
-    database : 'bug_tracking'
-})
-if (pool){
-    console.log("DB connceted");
-}
+    user: "postgres",
+    password: "2003",
+    host: "localhost",
+    port: 5432,
+    database: 'bug_tracking'
+});
 
-module.exports = pool
+// Check connection status
+pool.connect()
+    .then(() => {
+        console.log("Connected to database");
+    })
+    .catch((err) => {
+        console.error("Failed to connect to database:", err);
+    });
 
-
-
-
-//changes made by vishnu
+module.exports = pool;

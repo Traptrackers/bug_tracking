@@ -1,71 +1,69 @@
-import React, { useState } from 'react';
-import './Manager_customers.css';
+import React, { useState, useEffect } from 'react';
 import Manager_Layout from '../manager_layout/Manager_Layout';
+import './Manager_customers.css';
+import axios from 'axios';
 
 const Manager_customers = () => {
-  // Dummy data for demonstration
-  const customersData = [
-    { id: 1, name: 'Customer 1', email: 'customer1@example.com', assignedTester: 'Tester A', testStatus: 'Testing Blocked' },
-    { id: 2, name: 'Customer 2', email: 'customer2@example.com', assignedTester: 'Tester B', testStatus: 'Testing Completed' },
-    { id: 3, name: 'Customer 3', email: 'customer3@example.com', assignedTester: 'Tester C', testStatus: 'Testing In Progress' },
-    // Add more dummy data if needed
-  ];
-
-  const [customers, setCustomers] = useState(customersData);
+  const [customers, setCustomers] = useState([]);
   const [filterStatus, setFilterStatus] = useState('');
 
-  const handleFilterChange = (event) => {
-    setFilterStatus(event.target.value);
-    if (event.target.value === '') {
-      setCustomers(customersData);
-    } else {
-      const filteredCustomers = customersData.filter(customer => customer.testStatus === event.target.value);
-      setCustomers(filteredCustomers);
+  // Fetch customer data from the API
+  const fetchData = async () => {
+    try {
+      const response = await axios.get('http://localhost:4000/api/v1/projectmanager/fetchCustomerDetails');
+      const data = response.data;
+      if (data.customers && data.customers.length > 0) {
+        setCustomers(data.customers);
+      } else {
+        console.error('No customers found');
+      }
+    } catch (error) {
+      console.error('Error fetching customers:', error);
     }
   };
 
-  const handleCall = (phone) => {
-    // Logic to handle calling the customer
-    console.log('Calling', phone);
-  };
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const handleEmail = (email) => {
-    // Logic to handle emailing the customer
-    console.log('Emailing', email);
-  };
-
-  const getStatusColor = (testStatus) => {
-    switch (testStatus) {
-      case 'Testing Completed':
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Yet to Assign':
+        return 'black';
+      case 'Request Accepted':
         return 'darkgreen';
-      case 'Testing In Progress':
-        return 'darkgoldenrod';
-      case 'Testing Blocked':
-        return 'darkred';
+      // Add more cases if needed
       default:
         return 'black';
     }
   };
+
+  const handleFilterChange = (event) => {
+    setFilterStatus(event.target.value);
+  };
+
+  const filteredCustomers = filterStatus ? customers.filter(customer => customer.status === filterStatus) : customers;
 
   return (
     <Manager_Layout>
       <div>
         <h2>Customers</h2>
         <div className="filter-container">
-          <label htmlFor="filter" className='header'>Filter by Test Status : </label>
-          <select id="filter" value={filterStatus} onChange={handleFilterChange} style={{ width: '250px', marginLeft: '30px' }}>
+          <label htmlFor="filter" className='header'>Filter by Status:</label>
+          <select id="filter" value={filterStatus} onChange={handleFilterChange} style={{ width: '200px', marginLeft: '10px' }}>
             <option value="">All</option>
-            <option value="Testing Completed">Testing Completed</option>
-            <option value="Testing In Progress">Testing In Progress</option>
-            <option value="Testing Blocked">Testing Blocked</option>
+            <option value="Yet to Assign">Yet to Assign</option>
+            <option value="Request Accepted">Request Accepted</option>
+            {/* Add more options for other statuses if needed */}
           </select>
         </div>
-
         <div className="cards-container">
-          {customers.map(customer => (
-            <div className="card" key={customer.id}>
+          {filteredCustomers.map((customer) => (
+            <div className="card" key={customer.customer_id}>
               <div className="card-content">
-                <h3>{customer.name}</h3>
+                <h3>{customer.customer_name}</h3>
                 <table>
                   <tbody>
                     <tr>
@@ -73,12 +71,12 @@ const Manager_customers = () => {
                       <td>{customer.email}</td>
                     </tr>
                     <tr>
-                      <td><b>Assigned Tester:</b></td>
-                      <td>{customer.assignedTester}</td>
+                      <td><b>Tester Name:</b></td>
+                      <td>{customer.tester_name}</td>
                     </tr>
                     <tr>
-                      <td><b>Test Status:</b></td>
-                      <td style={{ color: getStatusColor(customer.testStatus) }}>{customer.testStatus}</td>
+                      <td><b>Status:</b></td>
+                      <td style={{ color: getStatusColor(customer.status) }}>{customer.status}</td>
                     </tr>
                     {/* Add more rows if needed */}
                   </tbody>

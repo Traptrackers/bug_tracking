@@ -1,86 +1,133 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Manager_Layout from '../manager_layout/Manager_Layout';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import './manager_work.css';
 
 const Manager_work = () => {
-  const [workData, setWorkData] = useState([
-    { id: 1, tester: 'Tester 1', client: 'Client 1', status: 'Under Review', reason: '', testLog: '', instructions: '' },
-    { id: 2, tester: 'Tester 2', client: 'Client 2', status: 'Under Review', reason: '', testLog: '', instructions: '' },
-    { id: 3, tester: 'Tester 3', client: 'Client 3', status: 'Under Review', reason: '', testLog: '', instructions: '' },
-    // Add more sample data as needed
-  ]);
+  const [testers, setTesters] = useState([]);
+  const [workData, setWorkData] = useState([]);
 
-  const [testers, setTesters] = useState([
-    { id: 1, name: 'Tester 1', availability: 'Available' },
-    { id: 2, name: 'Tester 2', availability: 'Busy' },
-    { id: 3, name: 'Tester 3', availability: 'Available' },
-    // Add more dummy data if needed
-  ]);
-
-  const handleBlockTesting = (id) => {
-    Swal.fire({
-      title: 'Block Testing',
-      html:
-        `<label for="reason" class="swal2-label">Reason<span class="swal2-required">*</span></label>` +
-        `<input id="reason" class="swal2-input" placeholder="Enter reason..." required>` +
-        `<label for="testLog" class="swal2-label">Test Log</label>` +
-        `<textarea id="testLog" class="swal2-textarea" placeholder="Enter test log..."></textarea>` +
-        `<label for="instructions" class="swal2-label">Instructions</label>` +
-        `<textarea id="instructions" class="swal2-textarea" placeholder="Enter instructions..."></textarea>`,
-      focusConfirm: false,
-      preConfirm: () => {
-        const reason = Swal.getPopup().querySelector('#reason').value;
-        const testLog = Swal.getPopup().querySelector('#testLog').value;
-        const instructions = Swal.getPopup().querySelector('#instructions').value;
-        return { reason, testLog, instructions };
-      },
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Block',
-      customClass: {
-        title: 'swal2-title-custom',
-        content: 'swal2-content-custom',
-        confirmButton: 'swal2-confirm-button-custom',
-        cancelButton: 'swal2-cancel-button-custom'
+  const fetchWorkData = async () => {
+    try {
+      const response = await axios.get('http://localhost:4000/api/v1/projectmanager/under_review_accepted');
+      if (Array.isArray(response.data.data)) {
+        setWorkData(response.data.data);
+        console.log(response);
+      } else {
+        console.error('Received non-array data for work');
       }
-    }).then((result) => {
-      if (result.isConfirmed) {
-        const { reason, testLog, instructions } = result.value;
-        if (!reason) {
-          Swal.showValidationMessage('Reason is required');
-          return;
+    } catch (error) {
+      console.error('Error fetching work data:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchWorkData();
+    // Poll for updates every 10 seconds
+    const interval = setInterval(fetchWorkData, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchAvailableTesters = async () => {
+    try {
+      const response = await axios.get('http://localhost:4000/api/v1/projectmanager/fetchAvailableTesters');
+      const data = response.data;
+      console.log(response);
+      if (data.testers && data.testers.length > 0) {
+        setTesters(data.testers);
+      } else {
+        console.error('No available testers found');
+      }
+    } catch (error) {
+      console.error('Error fetching available testers:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAvailableTesters();
+    const interval = setInterval(fetchWorkData, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleBlockTesting = async (id) => {
+    try {
+      const { value: reason } = await Swal.fire({
+        title: 'Block Testing',
+        input: 'text',
+        inputLabel: 'Reason',
+        inputPlaceholder: 'Enter reason...',
+        inputAttributes: {
+          required: 'true'
+        },
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Block',
+        customClass: {
+          title: 'swal2-title-custom',
+          content: 'swal2-content-custom',
+          confirmButton: 'swal2-confirm-button-custom',
+          cancelButton: 'swal2-cancel-button-custom'
         }
-        const updatedWorkData = workData.map((work) =>
-          work.id === id ? { ...work, status: 'Testing Blocked', reason, testLog, instructions } : work
-        );
-        setWorkData(updatedWorkData);
-      }
-    });
-  };
+      });
 
-  const handleResumeTesting = (id) => {
-    Swal.fire({
-      title: 'Testing Resumed',
-      text: 'Do you want to resume testing?',
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Resume',
-    }).then((result) => {
+      if (reason) {
+        const response = await axios.post('http://localhost:4000/api/v1/projectmanager/blockTesting', {
+          id,
+          reason
+        });
+
+        console.log(response.data);
+
+        const updatedWorkData = workData.map((work) =>
+          work.id === id ? { ...work, status: 'Testing Blocked', reason } : work
+        );
+
+        setWorkData(updatedWorkData);
+
+        Swal.fire('Success', 'Testing blocked successfully', 'success');
+        fetchWorkData();
+      }
+    } catch (error) {
+      console.error('Error blocking testing:', error);
+      Swal.fire('Error', 'Failed to block testing', 'error');
+    }
+  };
+  const handleResumeTesting = async (id) => {
+    try {
+      const result = await Swal.fire({
+        title: 'Testing Resumed',
+        text: 'Do you want to resume testing?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Resume',
+      });
+
       if (result.isConfirmed) {
+        const response = await axios.post('http://localhost:4000/api/v1/projectmanager/resumeTesting', {
+          id
+        });
+
+        console.log(response.data);
+
         const updatedWorkData = workData.map((work) =>
-          work.id === id ? { ...work, status: 'Testing in Process', reason: '', testLog: '', instructions: '' } : work
+          work.id === id ? { ...work, status: 'Testing In Progress', reason: '' } : work
         );
+
         setWorkData(updatedWorkData);
+        fetchWorkData();
       }
-    });
+    } catch (error) {
+      console.error('Error resuming testing:', error);
+      Swal.fire('Error', 'Failed to resume testing', 'error');
+    }
   };
 
-  const handleCompleteTesting = (id) => {
+  const handleCompleteTesting = async (id) => {
     Swal.fire({
       title: 'Testing Completed',
       text: 'Do you want to mark testing as completed?',
@@ -89,25 +136,39 @@ const Manager_work = () => {
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
       confirmButtonText: 'Mark as Completed',
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        const updatedWorkData = workData.filter((work) => work.id !== id);
-        setWorkData(updatedWorkData);
+        try {
+          // Make HTTP POST request to update backend
+          await axios.post('http://localhost:4000/api/v1/projectmanager/processTestingRequest', {
+            requestId: id,
+            status: 'Testing Completed' // Update status to 'Completed'
+          });
+          // Remove the completed work item from the UI
+          const updatedWorkData = workData.filter((work) => work.id !== id);
+          setWorkData(updatedWorkData);
+          fetchAvailableTesters();
+          fetchWorkData();
+          Swal.fire('Success', 'Testing marked as completed successfully', 'success');
+        } catch (error) {
+          console.error('Error marking testing as completed:', error);
+          Swal.fire('Error', 'Failed to mark testing as completed', 'error');
+        }
       }
     });
   };
 
-  const handleAssignTester = (id) => {
+  const handleAssignTester = (request_id) => {
+    const inputOptions = testers?.length > 0 ? testers.reduce((options, tester) => {
+      options[tester.name] = tester.name;
+      return options;
+    }, {}) : {};
+
     Swal.fire({
       title: 'Assign Tester',
       text: 'Select an available tester:',
       input: 'select',
-      inputOptions: testers.reduce((options, tester) => {
-        if (tester.availability === 'Available') {
-          options[tester.name] = tester.name;
-        }
-        return options;
-      }, {}),
+      inputOptions: inputOptions,
       inputPlaceholder: 'Select a tester',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
@@ -119,32 +180,58 @@ const Manager_work = () => {
         confirmButton: 'swal2-confirm-button-custom',
         cancelButton: 'swal2-cancel-button-custom'
       }
-    }).then((result) => {
+    }).then(async (result) => { // Make the function async to use await
       if (result.isConfirmed) {
-        const tester = result.value;
-        const updatedWorkData = workData.map((work) =>
-          work.id === id ? { ...work, status: 'Testing in Process', tester } : work
-        );
-        setWorkData(updatedWorkData);
+        const testerName = result.value;
+        const selectedTester = testers.find(tester => tester.name === testerName);
+        if (selectedTester) {
+          try {
+            // Make HTTP POST request to update backend
+            const response = await axios.post('http://localhost:4000/api/v1/projectmanager/updateStatusAndAssignTester', {
+              request_id: request_id,
+              status: 'Request Accepted', // Update the status here
+              tester_id: selectedTester.tester_id // Pass the tester_id instead of tester_name
+            });
+            console.log(response.data); // Log the response from the backend
+            // Update the work data only if the backend update is successful
+            const updatedWorkData = workData.map((work) =>
+              work.request_id === request_id ? { ...work, status: 'Testing In Progress', tester_name: selectedTester.name } : work
+            );
+            setWorkData(updatedWorkData);
+            Swal.fire('Success', 'Tester assigned and status updated successfully', 'success');
+
+            // Refetch work data after assigning tester and updating status
+            fetchAvailableTesters();
+            fetchWorkData();
+          } catch (error) {
+            console.error('Error updating status and assigning tester:', error);
+            Swal.fire('Error', 'Failed to assign tester and update status', 'error');
+          }
+        } else {
+          console.error('Selected tester not found');
+          Swal.fire('Error', 'Selected tester not found', 'error');
+        }
       }
     });
   };
-  
+
+
+
 
   return (
     <Manager_Layout>
       <div className='box'>
         <h2>Work In Process</h2>
         {workData.map((work) => (
-          <span className='display' key={work.id}>
+          <span className='display' key={work.request_id}>
             <div className='maininside'>
               <div className='inside'>
                 <h6>Tester</h6>
-                <h4>{work.tester}</h4>
+                <h4>{work.tester_name || "Not Assigned"}</h4> {/* Display "Not Assigned" if no tester is assigned */}
               </div>
               <div className='inside'>
                 <h6>Client</h6>
-                <h4>{work.client}</h4>
+                <h4>{work.customer_name}</h4>
               </div>
               <div className='inside'>
                 <h6>Work status</h6>
@@ -154,17 +241,20 @@ const Manager_work = () => {
                 {work.instructions && <p>Instructions: {work.instructions}</p>}
               </div>
               <div className='inside'>
+                {work.status === 'Request Accepted' && (
+                  <h3>Tester yet to start</h3>
+                )}
                 {(work.status === 'Under Review') && (
-                  <button className='assign' onClick={() => handleAssignTester(work.id)}>Assign Tester</button>
+                  <button className='assign' onClick={() => handleAssignTester(work.request_id)}>Assign Tester</button>
                 )}
-                {(work.status === 'Testing in Process') && (
-                  <button className='block' onClick={() => handleBlockTesting(work.id)}>Block Testing</button>
+                {(work.status === 'Testing In Progress') && (
+                  <button className='block' onClick={() => handleBlockTesting(work.request_id)}>Block Testing</button>
                 )}
-                {(work.status === 'Testing in Process' || work.status === 'Testing Blocked') && (
-                  <button className='complete' onClick={() => handleCompleteTesting(work.id)}>Testing Completed</button>
+                {(work.status === 'Testing In Progress' || work.status === 'Testing Blocked') && (
+                  <button className='complete' onClick={() => handleCompleteTesting(work.request_id)}>Testing Completed</button>
                 )}
                 {(work.status === 'Testing Blocked') && (
-                  <button className='resume' onClick={() => handleResumeTesting(work.id)}>Resume Testing</button>
+                  <button className='resume' onClick={() => handleResumeTesting(work.request_id)}>Resume Testing</button>
                 )}
               </div>
             </div>
